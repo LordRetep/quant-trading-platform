@@ -14,7 +14,7 @@ class StatArbStrategy(bt.Strategy):
         self.pairs = []
         self.spreads = {}
         self.z_scores = {}
-        self.positions = {}
+        self.asset_positions = {}  # Renamed from 'positions' to avoid conflict
 
         # Form pairs from datas (assume even number or skip last if odd)
         for i in range(0, len(self.datas), 2):
@@ -24,8 +24,8 @@ class StatArbStrategy(bt.Strategy):
                 pair_key = f"{pair[0]._name}_{pair[1]._name}"
                 self.spreads[pair_key] = deque(maxlen=self.p.lookback)
                 self.z_scores[pair_key] = deque(maxlen=self.p.lookback)
-                self.positions[pair[0]._name] = 0
-                self.positions[pair[1]._name] = 0
+                self.asset_positions[pair[0]._name] = 0
+                self.asset_positions[pair[1]._name] = 0
 
     def next(self):
         for pair in self.pairs:
@@ -50,26 +50,26 @@ class StatArbStrategy(bt.Strategy):
 
                 # Trading logic
                 # Long spread: Buy asset1, Sell asset2
-                if z_score < -self.p.z_entry and not self.positions[asset1._name]:
+                if z_score < -self.p.z_entry and not self.asset_positions[asset1._name]:
                     self.buy(data=asset1, size=self.p.size)
                     self.sell(data=asset2, size=self.p.size)
-                    self.positions[asset1._name] = self.p.size
-                    self.positions[asset2._name] = -self.p.size
+                    self.asset_positions[asset1._name] = self.p.size
+                    self.asset_positions[asset2._name] = -self.p.size
 
                 # Short spread: Sell asset1, Buy asset2
-                elif z_score > self.p.z_entry and not self.positions[asset1._name]:
+                elif z_score > self.p.z_entry and not self.asset_positions[asset1._name]:
                     self.sell(data=asset1, size=self.p.size)
                     self.buy(data=asset2, size=self.p.size)
-                    self.positions[asset1._name] = -self.p.size
-                    self.positions[asset2._name] = self.p.size
+                    self.asset_positions[asset1._name] = -self.p.size
+                    self.asset_positions[asset2._name] = self.p.size
 
                 # Exit positions when z-score reverts
-                elif abs(z_score) < self.p.z_exit and self.positions[asset1._name]:
-                    if self.positions[asset1._name] > 0:
+                elif abs(z_score) < self.p.z_exit and self.asset_positions[asset1._name]:
+                    if self.asset_positions[asset1._name] > 0:
                         self.sell(data=asset1, size=self.p.size)
                         self.buy(data=asset2, size=self.p.size)
                     else:
                         self.buy(data=asset1, size=self.p.size)
                         self.sell(data=asset2, size=self.p.size)
-                    self.positions[asset1._name] = 0
-                    self.positions[asset2._name] = 0
+                    self.asset_positions[asset1._name] = 0
+                    self.asset_positions[asset2._name] = 0
