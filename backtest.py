@@ -1,19 +1,24 @@
 import backtrader as bt
 import pandas as pd
 from datetime import datetime
-from strategy import TwoPercentRuleStrategy
+from strategy import StatArbStrategy
 from data_loader import get_data
 import matplotlib.pyplot as plt
 
 def run_backtest(assets, start_date, end_date):
     cerebro = bt.Cerebro()
-    cerebro.addstrategy(TwoPercentRuleStrategy)
+    cerebro.addstrategy(StatArbStrategy)
     cerebro.broker.set_cash(100000)
 
+    # Ensure at least two assets for pairs trading
+    if len(assets) < 2:
+        raise ValueError("Statistical arbitrage requires at least two assets")
+
+    # Load data for all assets
     for asset in assets:
         df = get_data(asset, start_date, end_date)
         if df.empty:
-            continue  # Skip if no data
+            raise ValueError(f"No data for {asset}")
         data = bt.feeds.PandasData(dataname=df, name=asset)
         cerebro.adddata(data)
 
@@ -35,7 +40,7 @@ def run_backtest(assets, start_date, end_date):
         "Sharpe Ratio": strat.analyzers.sharpe.get_analysis(),
         "Max Drawdown": strat.analyzers.drawdown.get_analysis(),
         "Total Return (%)": round(total_return_pct, 2),  # Round to 2 decimal places
-        "Returns Analysis": returns_analysis  # Keep full analysis for other metrics
+        "Returns Analysis": returns_analysis
     }
 
     fig = cerebro.plot(style='candlestick', iplot=False)[0][0]

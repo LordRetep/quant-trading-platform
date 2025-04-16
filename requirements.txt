@@ -1,5 +1,1 @@
-streamlit
-yfinance
-backtrader
-pandas
-matplotlib
+streamlit yfinance backtrader pandas matplotlib numpy
