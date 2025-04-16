@@ -18,16 +18,26 @@ def get_data(asset, start, end):
     if df.empty:
         raise ValueError(f"No data retrieved for {asset} from {start} to {end}")
     
+    # Handle multi-level columns if present
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)  # Use first level of column names
+    
     # Rename columns to match Backtrader's expected format
     df = df.rename(columns={
         'Open': 'open', 'High': 'high', 'Low': 'low',
-        'Close': 'close', 'Volume': 'volume'
+        'Close': 'close', 'Volume': 'volume', 'Adj Close': 'adj_close'
     })
     
-    # Ensure required columns exist
+    # Select only required columns
     required_columns = ['open', 'high', 'low', 'close', 'volume']
-    if not all(col in df.columns for col in required_columns):
+    available_columns = [col for col in required_columns if col in df.columns]
+    if not available_columns:
         raise ValueError(f"Data for {asset} missing required columns: {required_columns}")
     
+    df = df[available_columns]
     df.dropna(inplace=True)
+    
+    # Ensure index is datetime
+    df.index = pd.to_datetime(df.index)
+    
     return df
