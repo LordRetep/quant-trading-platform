@@ -27,10 +27,15 @@ def run_backtest(assets, start_date, end_date):
 
     strat = result[0]
 
+    # Extract total return as a percentage
+    returns_analysis = strat.analyzers.returns.get_analysis()
+    total_return_pct = returns_analysis.get('rtot', 0.0) * 100  # Convert decimal to %
+
     stats = {
         "Sharpe Ratio": strat.analyzers.sharpe.get_analysis(),
         "Max Drawdown": strat.analyzers.drawdown.get_analysis(),
-        "Total Return": strat.analyzers.returns.get_analysis()
+        "Total Return (%)": round(total_return_pct, 2),  # Round to 2 decimal places
+        "Returns Analysis": returns_analysis  # Keep full analysis for other metrics
     }
 
     fig = cerebro.plot(style='candlestick', iplot=False)[0][0]

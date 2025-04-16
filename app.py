@@ -27,6 +27,15 @@ if st.button("Run Backtest"):
                 stats, fig = run_backtest(assets, start_date, end_date)
                 st.pyplot(fig)
                 st.subheader("📊 Strategy Statistics")
-                st.json(stats)
+                
+                # Display Total Return prominently
+                st.metric("Total Return", f"{stats['Total Return (%)']}%")
+                
+                # Display other stats
+                st.json({
+                    "Sharpe Ratio": stats["Sharpe Ratio"],
+                    "Max Drawdown": stats["Max Drawdown"],
+                    "Returns Analysis": stats["Returns Analysis"]
+                })
             except Exception as e:
                 st.error(f"Backtest failed: {str(e)}")
