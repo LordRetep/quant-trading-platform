@@ -8,13 +8,13 @@ st.title("📈 Quant Trading Strategy Backtest")
 assets = st.multiselect("Select Assets", [
     "GBPUSD", "EURUSD", "EURGBP", "USDJPY",
     "EURCHF", "OIL", "GOLD", "SILVER"
-], default=["GBPUSD", "GOLD"])
+], default=["GBPUSD", "EURUSD", "GOLD", "SILVER"])
 
 col1, col2 = st.columns(2)
 with col1:
-    start_date = st.date_input("Start Date", date(2005, 1, 1), max_value=date.today())
+    start_date = st.date_input("Start Date", date(2022, 1, 1), min_value=date(2000, 1, 1), max_value=date.today())
 with col2:
-    end_date = st.date_input("End Date", date.today(), max_value=date.today())
+    end_date = st.date_input("End Date", date(2023, 12, 31), min_value=date(2000, 1, 1), max_value=date.today())
 
 if st.button("Run Backtest"):
     if not assets:
@@ -43,3 +43,5 @@ if st.button("Run Backtest"):
                 })
             except Exception as e:
                 st.error(f"Backtest failed: {str(e)}")
+                if "Not enough assets" in str(e):
+                    st.warning("Try selecting different assets or a shorter date range (e.g., 2022-01-01 to 2023-12-31).")

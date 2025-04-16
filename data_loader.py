@@ -1,19 +1,20 @@
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, date
+import time
 
 SYMBOL_MAP = {
     "GBPUSD": "GBPUSD=X",
     "EURUSD": "EURUSD=X",
     "EURGBP": "EURGBP=X",
-    "USDJPY": "USDJPY=X",  # Updated ticker for consistency
+    "USDJPY": "USDJPY=X",
     "EURCHF": "EURCHF=X",
     "OIL": "CL=F",
     "GOLD": "GC=F",
     "SILVER": "SI=F"
 }
 
-def get_data(asset, start, end):
+def get_data(asset, start, end, max_retries=3):
     ticker = SYMBOL_MAP[asset]
     try:
         # Ensure dates are valid and not in the future
@@ -23,18 +24,27 @@ def get_data(asset, start, end):
         start_str = start.strftime('%Y-%m-%d')
         end_str = end.strftime('%Y-%m-%d')
 
-        # Try primary date range
-        df = yf.download(ticker, start=start_str, end=end_str, progress=False)
-        
-        if df.empty:
-            print(f"Warning: No data for {asset} ({ticker}) from {start_str} to {end_str}")
+        # Try primary date range with retries
+        for attempt in range(max_retries):
+            try:
+                df = yf.download(ticker, start=start_str, end=end_str, progress=False)
+                if not df.empty:
+                    break
+                print(f"Warning: No data for {asset} ({ticker}) from {start_str} to {end_str}, attempt {attempt + 1}/{max_retries}")
+                time.sleep(1)  # Delay to avoid rate limits
+            except Exception as e:
+                print(f"Warning: Attempt {attempt + 1} failed for {asset} ({ticker}): {str(e)}")
+                time.sleep(1)
+        else:
             # Fallback: Try a shorter, recent range
-            fallback_start = pd.to_datetime(today) - pd.Timedelta(days=365)
-            df = yf.download(ticker, start=fallback_start, end=end_str, progress=False)
+            fallback_start = pd.to_datetime("2022-01-01")
+            fallback_end = pd.to_datetime("2023-12-31")
+            print(f"Warning: Trying fallback range for {asset} ({ticker}): {fallback_start} to {fallback_end}")
+            df = yf.download(ticker, start=fallback_start, end=fallback_end, progress=False)
             if df.empty:
-                print(f"Warning: Fallback range also empty for {asset} ({ticker})")
+                print(f"Warning: F  Fallback range also empty for {asset} ({ticker})")
                 return df
-        
+
         # Handle multi-level columns if present
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
