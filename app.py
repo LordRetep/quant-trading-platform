@@ -17,8 +17,16 @@ with col2:
     end_date = st.date_input("End Date", date.today())
 
 if st.button("Run Backtest"):
-    with st.spinner("Running backtest..."):
-        stats, fig = run_backtest(assets, start_date, end_date)
-        st.pyplot(fig)
-        st.subheader("📊 Strategy Statistics")
-        st.json(stats)
+    if not assets:
+        st.error("Please select at least one asset.")
+    elif start_date >= end_date:
+        st.error("Start date must be before end date.")
+    else:
+        with st.spinner("Running backtest..."):
+            try:
+                stats, fig = run_backtest(assets, start_date, end_date)
+                st.pyplot(fig)
+                st.subheader("📊 Strategy Statistics")
+                st.json(stats)
+            except Exception as e:
+                st.error(f"Backtest failed: {str(e)}")

@@ -12,6 +12,8 @@ def run_backtest(assets, start_date, end_date):
 
     for asset in assets:
         df = get_data(asset, start_date, end_date)
+        if df.empty:
+            continue  # Skip if no data
         data = bt.feeds.PandasData(dataname=df, name=asset)
         cerebro.adddata(data)
 
@@ -20,6 +22,9 @@ def run_backtest(assets, start_date, end_date):
     cerebro.addanalyzer(bt.analyzers.Returns, _name='returns')
 
     result = cerebro.run()
+    if not result:
+        raise ValueError("Backtest failed to produce results")
+
     strat = result[0]
 
     stats = {
