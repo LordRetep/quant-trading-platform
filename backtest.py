@@ -15,12 +15,19 @@ def run_backtest(assets, start_date, end_date):
         raise ValueError("Statistical arbitrage requires at least two assets")
 
     # Load data for all assets
+    valid_assets = []
     for asset in assets:
         df = get_data(asset, start_date, end_date)
         if df.empty:
-            raise ValueError(f"No data for {asset}")
+            print(f"Skipping {asset} due to no data")
+            continue
         data = bt.feeds.PandasData(dataname=df, name=asset)
         cerebro.adddata(data)
+        valid_assets.append(asset)
+
+    # Check if we have enough valid assets
+    if len(valid_assets) < 2:
+        raise ValueError("Not enough assets with valid data for pairs trading")
 
     cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='sharpe')
     cerebro.addanalyzer(bt.analyzers.DrawDown, _name='drawdown')
