@@ -1,12 +1,12 @@
 import yfinance as yf
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 
 SYMBOL_MAP = {
     "GBPUSD": "GBPUSD=X",
     "EURUSD": "EURUSD=X",
     "EURGBP": "EURGBP=X",
-    "USDJPY": "JPY=X",
+    "USDJPY": "USDJPY=X",  # Updated ticker for consistency
     "EURCHF": "EURCHF=X",
     "OIL": "CL=F",
     "GOLD": "GC=F",
@@ -16,16 +16,24 @@ SYMBOL_MAP = {
 def get_data(asset, start, end):
     ticker = SYMBOL_MAP[asset]
     try:
-        # Ensure dates are in correct format
-        start = pd.to_datetime(start).strftime('%Y-%m-%d')
-        end = pd.to_datetime(end).strftime('%Y-%m-%d')
-        
-        # Download data
-        df = yf.download(ticker, start=start, end=end, progress=False)
+        # Ensure dates are valid and not in the future
+        today = date.today()
+        start = pd.to_datetime(start)
+        end = min(pd.to_datetime(end), pd.to_datetime(today))
+        start_str = start.strftime('%Y-%m-%d')
+        end_str = end.strftime('%Y-%m-%d')
+
+        # Try primary date range
+        df = yf.download(ticker, start=start_str, end=end_str, progress=False)
         
         if df.empty:
-            print(f"Warning: No data retrieved for {asset} ({ticker}) from {start} to {end}")
-            return df
+            print(f"Warning: No data for {asset} ({ticker}) from {start_str} to {end_str}")
+            # Fallback: Try a shorter, recent range
+            fallback_start = pd.to_datetime(today) - pd.Timedelta(days=365)
+            df = yf.download(ticker, start=fallback_start, end=end_str, progress=False)
+            if df.empty:
+                print(f"Warning: Fallback range also empty for {asset} ({ticker})")
+                return df
         
         # Handle multi-level columns if present
         if isinstance(df.columns, pd.MultiIndex):
